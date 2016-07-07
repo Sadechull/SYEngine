@@ -7,8 +7,6 @@
 RtmpStream::RtmpStream(std::wstring& rtmp_url)
     : _ref_count(1), _rtmp(nullptr), _rtmp_connected(false), _received_length(0), _first_read(true), _is_eof(false) {
     // ¡ü fuck ref count
-    WSADATA wsa;
-    WSAStartup(MAKEWORD(2, 2), &wsa);
 
     MFCreateAttributes(&_attrs, 0);
 
@@ -35,8 +33,6 @@ RtmpStream::~RtmpStream() {
     CloseHandle(_event_async_exit);
 
     Module<InProc>::GetModule().DecrementObjectCount();
-
-    WSACleanup();
 }
 
 HRESULT RtmpStream::QueryInterface(REFIID iid, void** ppv) {
@@ -183,8 +179,18 @@ STDMETHODIMP RtmpStream::Read(BYTE *pb, ULONG cb, ULONG *pcbRead) {
             _first_read = false;
             // FLV header, for seeking
             memcpy(_flv_header + _received_length, pb, read);
-        }
-        _received_length += read;
+			_received_length += read;
+
+			// First RTMP_Read only return 'FLV1' , get full header before continue
+			if (_flv_header[4] == 0) {
+				uint8_t buf[5];
+				int nread = RTMP_Read(_rtmp, (char*)buf, 5);
+				memcpy(_flv_header + _received_length, buf, nread);
+				_received_length += nread;
+			}
+		} else {
+			_received_length += read;
+		}
     }
 
 
