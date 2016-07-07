@@ -72,7 +72,7 @@ bool RtmpStream::Open(IMFAttributes* config) {
     }
 
     _rtmp->Link.lFlags |= RTMP_LF_LIVE;
-    RTMP_SetBufferMS(_rtmp, 1000);
+    RTMP_SetBufferMS(_rtmp, 500);
 
     if (!RTMP_Connect(_rtmp, nullptr)) {
         RTMP_Close(_rtmp);
